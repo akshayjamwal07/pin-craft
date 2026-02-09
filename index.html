@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pin craft — Interact with Pinterest</title>
+  <meta name="description" content="Pin craft: A tool to explore, manage, and interact with your Pinterest content using the official Pinterest API."/>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #e60023 0%, #ad081b 100%);
+      color: white;
+      text-align: center;
+      padding: 5rem 1rem 4rem;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 3.5rem;
+      font-weight: 700;
+    }
+    header p {
+      font-size: 1.4rem;
+      margin: 1rem 0 2rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn {
+      display: inline-block;
+      background-color: white;
+      color: #e60023;
+      font-weight: bold;
+      padding: 1rem 2.2rem;
+      border-radius: 24px;
+      text-decoration: none;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+    }
+    .btn-outline:hover {
+      background: rgba(255,255,255,0.15);
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+      text-align: center;
+    }
+    section {
+      margin: 4rem 0;
+    }
+    h2 {
+      color: #111;
+      font-size: 2.2rem;
+      margin-bottom: 1.2rem;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2.5rem;
+    }
+    .feature-card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: transform 0.25s;
+    }
+    .feature-card:hover {
+      transform: translateY(-8px);
+    }
+    footer {
+      background: #222;
+      color: #ccc;
+      text-align: center;
+      padding: 2.5rem 1rem;
+      font-size: 0.95rem;
+    }
+    footer a {
+      color: #e60023;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Pin craft</h1>
+    <p>A modern interface to explore, organize, and interact with your Pinterest content using the official Pinterest API.</p>
+    <a href="#" id="loginBtn" class="btn">Connect with Pinterest</a>
+    <p style="margin-top: 2rem; font-size: 1rem; opacity: 0.9;">
+      <a href="privacy.html" style="color: white; text-decoration: underline;">Privacy Policy</a>
+    </p>
+  </header>
+
+  <main>
+    <section>
+      <h2>What You Can Do</h2>
+      <div class="features">
+        <div class="feature-card">
+          <h3>View Your Pins & Boards</h3>
+          <p>Browse your personal pins, boards, and account information securely through the Pinterest API.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Search & Discover</h3>
+          <p>Search for pins, trends, and inspiration directly from your customized dashboard.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Manage Content</h3>
+          <p>Create, edit, and organize boards and pins (subject to approved scopes).</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Get Started in Seconds</h2>
+      <p>Connect your Pinterest account to unlock full functionality. Your data remains secure and is never stored by Pin craft beyond your browser session.</p>
+      <a href="#" id="loginBtnBottom" class="btn">Connect Pinterest Account</a>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 Pin craft. Built with ❤️ for the Pinterest community.<br>
+    This site uses GitHub Pages and interacts with the <a href="https://developers.pinterest.com/docs/api/v5/" target="_blank" rel="noopener">Pinterest API v5</a>.<br>
+    <a href="privacy.html">Privacy Policy</a> • <a href="https://yourusername.github.io/pincraft/" target="_blank">Home</a></p>
+  </footer>
+
+  <script>
+    // Basic PKCE helper functions
+    function base64UrlEncode(str) {
+      return btoa(str)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
+    function generateCodeVerifier() {
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      return base64UrlEncode(String.fromCharCode.apply(null, array));
+    }
+
+    function generateCodeChallenge(verifier) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))
+        .then(buffer => {
+          const challenge = base64UrlEncode(String.fromCharCode(...new Uint8Array(buffer)));
+          return challenge;
+        });
+    }
+
+    // Configuration — UPDATE THESE VALUES
+    const CLIENT_ID = 'YOUR_CLIENT_ID';                    // ← Replace
+    const REDIRECT_URI = 'https://yourusername.github.io/pincraft/';  // ← Replace with your GitHub Pages URL
+    const SCOPES = 'boards:read pins:read user_accounts:read';   // Add more scopes as approved
+
+    const loginButtons = document.querySelectorAll('#loginBtn, #loginBtnBottom');
+
+    loginButtons.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        const codeVerifier = generateCodeVerifier();
+        const codeChallengePromise = generateCodeChallenge(codeVerifier);
+
+        // Store verifier in sessionStorage (will be needed after redirect)
+        sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+
+        const codeChallenge = await codeChallengePromise;
+
+        const state = crypto.randomUUID ? crypto.randomUUID() : 'state-' + Date.now();
+
+        const authUrl = new URL('https://www.pinterest.com/oauth/');
+        authUrl.searchParams.append('client_id', CLIENT_ID);
+        authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
+        authUrl.searchParams.append('response_type', 'code');
+        authUrl.searchParams.append('scope', SCOPES);
+        authUrl.searchParams.append('state', state);
+        authUrl.searchParams.append('code_challenge', codeChallenge);
+        authUrl.searchParams.append('code_challenge_method', 'S256');
+
+        // Optional: store state for CSRF protection
+        sessionStorage.setItem('oauth_state', state);
+
+        window.location.href = authUrl.toString();
+      });
+    });
+
+    // After redirect — check for code in URL
+    window.addEventListener('load', () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const state = params.get('state');
+      const storedState = sessionStorage.getItem('oauth_state');
+
+      if (code && state === storedState) {
+        // In a real app, exchange code for token via backend or proxy
+        // Here we show a simple message (client-side PKCE token exchange requires backend for security)
+        alert('Authorization code received!\n\nIn a production app, exchange this code server-side for an access token.\nCode: ' + code.substring(0, 10) + '...');
+        // Clear URL params
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    });
+  </script>
+</body>
+</html>
